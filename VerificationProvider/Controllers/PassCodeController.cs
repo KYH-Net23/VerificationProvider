@@ -21,9 +21,16 @@ namespace VerificationProvider.Controllers
         [ActionName("get")]
         public IHttpActionResult GetPasscode(string key)
         {
-            var code = _passCodeService.RetrievePasscode(key);
+            var passcode = _passCodeService.RetrievePasscode(key);
 
-            return Ok(new{ code });
+            return Ok(new{ passcode });
+        }
+
+        [HttpPost]
+        [ActionName("validate")]
+        public bool ValidatePasscode([FromBody] string passcode, string userId)
+        {
+            return _passCodeService.ValidatePassCode(passcode, userId);
         }
 
         // This request comes from identity provider
@@ -34,19 +41,17 @@ namespace VerificationProvider.Controllers
         public async Task<IHttpActionResult> GeneratePasscode([FromBody] PassCodeRequest request)
         {
             if (request == null)
-            {
                 return BadRequest();
-            }
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             var randomPasscode = _passCodeService.GeneratePasscode(request.UserId);
 
-            // get token for authorization
-            // var token = ....
+            // Read these values from the config
+            var apiKey = "";
+            var providerName = "";
+            var authorizationToken = await _apiService.GetAuthorizationToken(apiKey, providerName);
 
             var emailRequest = new EmailRequest
             {
@@ -55,14 +60,9 @@ namespace VerificationProvider.Controllers
                 UserId = request.UserId
             };
 
-            var result = await _apiService.SendPassCodeToEmail(emailRequest);
+            var result = await _apiService.SendPassCodeToEmail(emailRequest, authorizationToken.Token);
 
-            if (result)
-            {
-                return Ok();
-            }
-
-            return BadRequest();
+            return result ? (IHttpActionResult)Ok() : BadRequest();
         }
     }
 }

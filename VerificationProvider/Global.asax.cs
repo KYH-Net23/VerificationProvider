@@ -26,7 +26,6 @@ namespace VerificationProvider
 				.As<IPassCodeService>()
 				.SingleInstance();
 
-
 			builder.Register(c => MemoryCache.Default)
 				.AsSelf()
 				.SingleInstance();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.Caching;
 using VerificationProvider.Interfaces;
 
@@ -7,6 +8,8 @@ namespace VerificationProvider.Services
     public class PassCodeService : IPassCodeService
     {
         private readonly MemoryCache _cache;
+        private const int LengthOfPassCode = 6;
+        private const int CacheDurationInMinutes = 5;
 
         public PassCodeService(MemoryCache cache)
         {
@@ -15,8 +18,7 @@ namespace VerificationProvider.Services
 
         public bool ValidatePassCode(string passCode, string userId)
         {
-            var key = _cache.Get(userId) as string;
-            return key == null;
+            return _cache.Get(userId) as string == passCode;
         }
 
         public string GeneratePasscode(string userId)
@@ -25,15 +27,16 @@ namespace VerificationProvider.Services
 
             _cache.Set(userId, code, new CacheItemPolicy
             {
-                AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(5)
+                AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(CacheDurationInMinutes)
             });
 
             return code;
         }
 
-        private string GenerateRandomPassCode()
+        private static string GenerateRandomPassCode()
         {
-            return "123456";
+            var random = new Random();
+            return string.Concat(Enumerable.Range(0, LengthOfPassCode).Select(_ => random.Next(0, 10)));
         }
 
         public string RetrievePasscode(string key)
