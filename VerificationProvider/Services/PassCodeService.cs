@@ -25,12 +25,12 @@ namespace VerificationProvider.Services
         {
             var code = GenerateRandomPassCode();
 
-            SavePasscodeInMemoryCacheCache(userId, code);
+            SavePasscodeInMemoryCache(userId, code);
 
             return code;
         }
 
-        private void SavePasscodeInMemoryCacheCache(string userId, string code)
+        private void SavePasscodeInMemoryCache(string userId, string code)
         {
             _cache.Set(userId, code, new CacheItemPolicy
             {
