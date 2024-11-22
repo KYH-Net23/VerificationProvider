@@ -7,16 +7,16 @@ using VerificationProvider.Services;
 
 namespace VerificationProvider.Controllers
 {
-    public class PassCodeController : ApiController
+    public class PasscodeController : ApiController
     {
-        private readonly IPassCodeService _passCodeService;
+        private readonly IPasscodeService _passcodeService;
         private readonly HttpClientService _httpClientService;
         private readonly string _apiKey = "";  // TODO read from config
         private readonly string _providerName = ""; // TODO read from config
 
-        public PassCodeController(IPassCodeService passCodeService, HttpClientService httpClientService)
+        public PasscodeController(IPasscodeService passcodeService, HttpClientService httpClientService)
         {
-            _passCodeService = passCodeService;
+            _passcodeService = passcodeService;
             _httpClientService = httpClientService;
         }
 
@@ -26,7 +26,7 @@ namespace VerificationProvider.Controllers
         [ActionName("get")]
         public IHttpActionResult GetPasscode(string key)
         {
-            var passcode = _passCodeService.RetrievePasscode(key);
+            var passcode = _passcodeService.RetrievePasscode(key);
 
             return Ok(new{ passcode });
         }
@@ -35,7 +35,10 @@ namespace VerificationProvider.Controllers
         [ActionName("validate")]
         public IHttpActionResult ValidatePasscode([FromBody] string passcode, string userId)
         {
-            return _passCodeService.ValidatePassCode(passcode, userId) ? (IHttpActionResult)Ok() : BadRequest();
+            if (!_passcodeService.ValidatePasscodeAndUserId(passcode, userId)) return BadRequest();
+
+            _passcodeService.RemovePasscode(userId);
+            return Ok();
         }
 
         [HttpPost]
@@ -53,7 +56,7 @@ namespace VerificationProvider.Controllers
             if (tokenProviderResponse == null)
                 return Unauthorized();
 
-            var emailRequest = passcodeRequest.MapToEmailRequest(_passCodeService.GeneratePasscode(passcodeRequest.UserId));
+            var emailRequest = passcodeRequest.MapToEmailRequest(_passcodeService.GeneratePasscode(passcodeRequest.UserId));
 
             var result = await _httpClientService.TryToSendPassCodeToEmail(emailRequest, tokenProviderResponse.Token);
 

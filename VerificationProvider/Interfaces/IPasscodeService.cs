@@ -1,9 +1,10 @@
 ﻿namespace VerificationProvider.Interfaces
 {
-    public interface IPassCodeService
+    public interface IPasscodeService
     {
-        bool ValidatePassCode(string passCode, string userId);
+        bool ValidatePasscodeAndUserId(string passCode, string userId);
         string GeneratePasscode(string userId);
         string RetrievePasscode(string key);
+        void RemovePasscode(string key);
     }
 }

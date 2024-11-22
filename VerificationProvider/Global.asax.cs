@@ -23,8 +23,8 @@ namespace VerificationProvider
 
 			builder.RegisterApiControllers(Assembly.GetExecutingAssembly());
 
-			builder.RegisterType<PassCodeService>()
-				.As<IPassCodeService>()
+			builder.RegisterType<PasscodeService>()
+				.As<IPasscodeService>()
 				.SingleInstance();
 
 			builder.Register(c => MemoryCache.Default)
