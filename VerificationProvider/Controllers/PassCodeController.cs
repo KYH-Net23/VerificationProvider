@@ -11,8 +11,8 @@ namespace VerificationProvider.Controllers
     {
         private readonly IPassCodeService _passCodeService;
         private readonly HttpClientService _httpClientService;
-        private readonly string _apiKey = "";
-        private readonly string _providerName = "";
+        private readonly string _apiKey = "";  // TODO read from config
+        private readonly string _providerName = ""; // TODO read from config
 
         public PassCodeController(IPassCodeService passCodeService, HttpClientService httpClientService)
         {
@@ -20,6 +20,8 @@ namespace VerificationProvider.Controllers
             _httpClientService = httpClientService;
         }
 
+        // Only for debugging purposes
+        // TODO remove later
         [HttpGet]
         [ActionName("get")]
         public IHttpActionResult GetPasscode(string key)
@@ -31,9 +33,9 @@ namespace VerificationProvider.Controllers
 
         [HttpPost]
         [ActionName("validate")]
-        public bool ValidatePasscode([FromBody] string passcode, string userId)
+        public IHttpActionResult ValidatePasscode([FromBody] string passcode, string userId)
         {
-            return _passCodeService.ValidatePassCode(passcode, userId);
+            return _passCodeService.ValidatePassCode(passcode, userId) ? (IHttpActionResult)Ok() : BadRequest();
         }
 
         [HttpPost]

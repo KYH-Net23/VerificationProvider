@@ -10,18 +10,17 @@ namespace VerificationProvider.Services
 {
     public class HttpClientService
     {
-        private HttpClient _emailProviderHttpClient;
-        private HttpClient _tokenProviderHttpClient;
-        private readonly IComponentContext _context;
+        private readonly HttpClient _emailProviderHttpClient;
+        private readonly HttpClient _tokenProviderHttpClient;
 
         public HttpClientService(IComponentContext context)
         {
-            _context = context;
+            _emailProviderHttpClient = context.ResolveNamed<HttpClient>("EmailProvider");
+            _tokenProviderHttpClient = context.ResolveNamed<HttpClient>("TokenProvider");
         }
 
         public async Task<bool> TryToSendPassCodeToEmail(EmailRequest emailRequestBody, string authorizationToken)
         {
-            _emailProviderHttpClient = _context.ResolveNamed<HttpClient>("EmailProvider");
             var requestMessage = CreateHttpRequestMessage("/confirm", emailRequestBody, authorizationToken);
 
             try
@@ -40,10 +39,11 @@ namespace VerificationProvider.Services
 
         public async Task<TokenProviderResponse> GetAuthorizationToken(string apiKey, string providerName)
         {
-            _tokenProviderHttpClient = _context.ResolveNamed<HttpClient>("TokenProvider");
             var requestMessage = CreateHttpRequestMessage("tokengenerator/generate-email-token");
+
             requestMessage.Headers.Add("x-api-key", apiKey);
             requestMessage.Headers.Add("x-provider-name", providerName);
+
             try
             {
                 var response = await _tokenProviderHttpClient.SendAsync(requestMessage);
@@ -61,6 +61,7 @@ namespace VerificationProvider.Services
         private static HttpRequestMessage CreateHttpRequestMessage(string endpointUrl, object body = null, string authorizationToken = null)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl);
+
             if (authorizationToken != null)
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authorizationToken);
