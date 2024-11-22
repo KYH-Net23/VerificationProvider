@@ -21,7 +21,7 @@ namespace VerificationProvider.Services
 
         public async Task<bool> TryToSendPassCodeToEmail(EmailRequest emailRequestBody, string authorizationToken)
         {
-            var requestMessage = CreateHttpRequestMessage("/confirm", emailRequestBody, authorizationToken);
+            var requestMessage = CreateHttpRequestMessage("/confirm", HttpMethod.Post, emailRequestBody, authorizationToken);
 
             try
             {
@@ -39,7 +39,7 @@ namespace VerificationProvider.Services
 
         public async Task<TokenProviderResponse> GetAuthorizationToken(string apiKey, string providerName)
         {
-            var requestMessage = CreateHttpRequestMessage("tokengenerator/generate-email-token");
+            var requestMessage = CreateHttpRequestMessage("tokengenerator/generate-email-token", HttpMethod.Post);
 
             requestMessage.Headers.Add("x-api-key", apiKey);
             requestMessage.Headers.Add("x-provider-name", providerName);
@@ -58,9 +58,9 @@ namespace VerificationProvider.Services
             return null;
         }
 
-        private static HttpRequestMessage CreateHttpRequestMessage(string endpointUrl, object body = null, string authorizationToken = null)
+        private static HttpRequestMessage CreateHttpRequestMessage(string endpointUrl, HttpMethod method, object body = null, string authorizationToken = null)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl);
+            var request = new HttpRequestMessage(method, endpointUrl);
 
             if (authorizationToken != null)
             {
