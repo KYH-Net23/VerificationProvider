@@ -46,14 +46,14 @@ namespace VerificationProvider.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var authorizationInfo = await _httpClientService.GetAuthorizationToken(_apiKey, _providerName);
+            var tokenProviderResponse = await _httpClientService.GetAuthorizationToken(_apiKey, _providerName);
 
-            if (authorizationInfo == null)
+            if (tokenProviderResponse == null)
                 return Unauthorized();
 
             var emailRequest = passcodeRequest.MapToEmailRequest(_passCodeService.GeneratePasscode(passcodeRequest.UserId));
 
-            var result = await _httpClientService.TryToSendPassCodeToEmail(emailRequest, authorizationInfo.Token);
+            var result = await _httpClientService.TryToSendPassCodeToEmail(emailRequest, tokenProviderResponse.Token);
 
             return result ? (IHttpActionResult)Ok() : BadRequest();
         }
