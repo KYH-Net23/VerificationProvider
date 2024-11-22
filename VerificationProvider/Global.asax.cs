@@ -16,6 +16,7 @@ namespace VerificationProvider
 {
 	public class WebApiApplication : HttpApplication
 	{
+		private const int TimeoutDurationInSeconds = 30;
 		protected void Application_Start()
 		{
 			var builder = new ContainerBuilder();
@@ -34,19 +35,24 @@ namespace VerificationProvider
 			{
 				var client = new HttpClient
 				{
-					BaseAddress = new Uri("https://rika-solutions-email-provider.azurewebsites.net/")
+					BaseAddress = new Uri("https://rika-solutions-email-provider.azurewebsites.net/"),
+					Timeout = TimeSpan.FromSeconds(TimeoutDurationInSeconds)
 				};
+
 				return client;
-			}).Named<HttpClient>("EmailProvider");
+			}).Named<HttpClient>("EmailProvider")
+				.SingleInstance();
 
 			builder.Register(x =>
 			{
 				var client = new HttpClient
 				{
-					BaseAddress = new Uri("https://rika-tokenservice-agbebvf3drayfqf6.swedencentral-01.azurewebsites.net/")
+					BaseAddress = new Uri("https://rika-tokenservice-agbebvf3drayfqf6.swedencentral-01.azurewebsites.net/"),
+					Timeout = TimeSpan.FromSeconds(TimeoutDurationInSeconds)
 				};
 				return client;
-			}).Named<HttpClient>("TokenProvider");
+			}).Named<HttpClient>("TokenProvider")
+				.SingleInstance();
 
 			builder.RegisterType<HttpClientService>()
 				.AsSelf()
