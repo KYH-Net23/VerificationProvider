@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using System.Web.Http;
+using VerificationProvider.Extensions;
 using VerificationProvider.Interfaces;
 using VerificationProvider.Models;
 using VerificationProvider.Services;
@@ -9,12 +10,14 @@ namespace VerificationProvider.Controllers
     public class PassCodeController : ApiController
     {
         private readonly IPassCodeService _passCodeService;
-        private readonly ApiService _apiService;
+        private readonly HttpClientService _httpClientService;
+        private readonly string _apiKey = "";
+        private readonly string _providerName = "";
 
-        public PassCodeController(IPassCodeService passCodeService, ApiService apiService)
+        public PassCodeController(IPassCodeService passCodeService, HttpClientService httpClientService)
         {
             _passCodeService = passCodeService;
-            _apiService = apiService;
+            _httpClientService = httpClientService;
         }
 
         [HttpGet]
@@ -33,36 +36,27 @@ namespace VerificationProvider.Controllers
             return _passCodeService.ValidatePassCode(passcode, userId);
         }
 
-        // This request comes from identity provider
-        // Gets a token from the token provider
-        // This then sends a request to the email provider
         [HttpPost]
         [ActionName("generate")]
-        public async Task<IHttpActionResult> GeneratePasscode([FromBody] PassCodeRequest request)
+        public async Task<IHttpActionResult> GeneratePasscode([FromBody] PassCodeRequest passcodeRequest)
         {
-            if (request == null)
+            if (passcodeRequest == null)
                 return BadRequest();
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var randomPasscode = _passCodeService.GeneratePasscode(request.UserId);
+            var authorizationInfo = await _httpClientService.GetAuthorizationToken(_apiKey, _providerName);
 
-            // Read these values from the config
-            var apiKey = "";
-            var providerName = "";
-            var authorizationToken = await _apiService.GetAuthorizationToken(apiKey, providerName);
+            if (authorizationInfo == null)
+                return Unauthorized();
 
-            var emailRequest = new EmailRequest
-            {
-                Receiver = request.EmailAddress,
-                PassCode = randomPasscode,
-                UserId = request.UserId
-            };
+            var emailRequest = passcodeRequest.MapToEmailRequest(_passCodeService.GeneratePasscode(passcodeRequest.UserId));
 
-            var result = await _apiService.SendPassCodeToEmail(emailRequest, authorizationToken.Token);
+            var result = await _httpClientService.TryToSendPassCodeToEmail(emailRequest, authorizationInfo.Token);
 
             return result ? (IHttpActionResult)Ok() : BadRequest();
         }
+
     }
 }

@@ -48,7 +48,7 @@ namespace VerificationProvider
 				return client;
 			}).Named<HttpClient>("TokenProvider");
 
-			builder.RegisterType<ApiService>()
+			builder.RegisterType<HttpClientService>()
 				.AsSelf()
 				.SingleInstance();
 

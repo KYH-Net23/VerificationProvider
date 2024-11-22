@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,25 +8,25 @@ using VerificationProvider.Models;
 
 namespace VerificationProvider.Services
 {
-    public class ApiService
+    public class HttpClientService
     {
         private HttpClient _emailProviderHttpClient;
         private HttpClient _tokenProviderHttpClient;
         private readonly IComponentContext _context;
 
-        public ApiService(IComponentContext context)
+        public HttpClientService(IComponentContext context)
         {
             _context = context;
         }
 
-        public async Task<bool> SendPassCodeToEmail(EmailRequest emailRequestBody, string authorizationToken)
+        public async Task<bool> TryToSendPassCodeToEmail(EmailRequest emailRequestBody, string authorizationToken)
         {
             _emailProviderHttpClient = _context.ResolveNamed<HttpClient>("EmailProvider");
-            var request = CreateRequest("/confirm", emailRequestBody, authorizationToken);
+            var requestMessage = CreateHttpRequestMessage("/confirm", emailRequestBody, authorizationToken);
 
             try
             {
-                var response = await _emailProviderHttpClient.SendAsync(request);
+                var response = await _emailProviderHttpClient.SendAsync(requestMessage);
                 response.EnsureSuccessStatusCode();
                 return true;
             }
@@ -42,12 +41,12 @@ namespace VerificationProvider.Services
         public async Task<TokenProviderResponse> GetAuthorizationToken(string apiKey, string providerName)
         {
             _tokenProviderHttpClient = _context.ResolveNamed<HttpClient>("TokenProvider");
-            var request = CreateRequest("tokengenerator/generate-email-token");
-            request.Headers.Add("x-api-key", apiKey);
-            request.Headers.Add("x-provider-name", providerName);
+            var requestMessage = CreateHttpRequestMessage("tokengenerator/generate-email-token");
+            requestMessage.Headers.Add("x-api-key", apiKey);
+            requestMessage.Headers.Add("x-provider-name", providerName);
             try
             {
-                var response = await _tokenProviderHttpClient.SendAsync(request);
+                var response = await _tokenProviderHttpClient.SendAsync(requestMessage);
                 response.EnsureSuccessStatusCode();
                 return JsonConvert.DeserializeObject<TokenProviderResponse>(await response.Content.ReadAsStringAsync());
             }
@@ -59,7 +58,7 @@ namespace VerificationProvider.Services
             return null;
         }
 
-        private static HttpRequestMessage CreateRequest(string endpointUrl, object body = null, string authorizationToken = null)
+        private static HttpRequestMessage CreateHttpRequestMessage(string endpointUrl, object body = null, string authorizationToken = null)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, endpointUrl);
             if (authorizationToken != null)
@@ -74,10 +73,5 @@ namespace VerificationProvider.Services
 
             return request;
         }
-    }
-
-    public class TokenProviderResponse
-    {
-        public string Token { get; set; }
     }
 }
