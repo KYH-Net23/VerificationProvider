@@ -1,4 +1,5 @@
 ﻿using System.Web.Http;
+using System.Web.Http.Cors;
 
 namespace VerificationProvider
 {
@@ -7,6 +8,12 @@ namespace VerificationProvider
 		public static void Register(HttpConfiguration config)
 		{
 			// Web API configuration and services
+
+			config.EnableCors(new EnableCorsAttribute(
+				origins: "http://localhost:5173",
+				headers: "*",
+				methods: "*"
+			));
 
 			// Web API routes
 			config.MapHttpAttributeRoutes();
