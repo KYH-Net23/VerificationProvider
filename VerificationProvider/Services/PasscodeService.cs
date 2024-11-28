@@ -9,7 +9,7 @@ namespace VerificationProvider.Services
     {
         private readonly MemoryCache _cache;
         private const int LengthOfPassCode = 6;
-        private const int CacheDurationInMinutes = 5;
+        private const int CacheDurationInMinutes = 30;
         private static readonly Random Random = new Random();
 
         public PasscodeService(MemoryCache cache)
@@ -17,33 +17,20 @@ namespace VerificationProvider.Services
             _cache = cache;
         }
 
-        public bool ValidatePasscodeAndUserId(string passCode, string userId)
+        public bool ValidatePasscodeAndUserId(string passCode, string email)
         {
-            return _cache.Get(userId) is string cachedPasscode && cachedPasscode == passCode;
+            return _cache.Get(email) is string cachedPasscode && cachedPasscode == passCode;
         }
 
-        public string GeneratePasscode(string userId)
+        public string GeneratePasscode(string email)
         {
             var code = GenerateRandomPassCode();
 
-            RemovePasscode(userId);
+            RemovePasscode(email);
 
-            SaveNewPasscodeInMemoryCache(userId, code);
+            SaveNewPasscodeInMemoryCache(email, code);
 
             return code;
-        }
-
-        private void SaveNewPasscodeInMemoryCache(string userId, string code)
-        {
-            _cache.Set(userId, code, new CacheItemPolicy
-            {
-                AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(CacheDurationInMinutes)
-            });
-        }
-
-        private static string GenerateRandomPassCode()
-        {
-            return string.Concat(Enumerable.Range(0, LengthOfPassCode).Select(_ => Random.Next(0, 10)));
         }
 
         public string RetrievePasscode(string key)
@@ -54,6 +41,19 @@ namespace VerificationProvider.Services
         public void RemovePasscode(string key)
         {
             _cache.Remove(key);
+        }
+
+        private void SaveNewPasscodeInMemoryCache(string email, string code)
+        {
+            _cache.Set(email, code, new CacheItemPolicy
+            {
+                AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(CacheDurationInMinutes)
+            });
+        }
+
+        private static string GenerateRandomPassCode()
+        {
+            return string.Concat(Enumerable.Range(0, LengthOfPassCode).Select(_ => Random.Next(0, 10)));
         }
     }
 }

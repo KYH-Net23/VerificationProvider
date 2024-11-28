@@ -1,5 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.ModelBinding;
 using VerificationProvider.Extensions;
 using VerificationProvider.Interfaces;
 using VerificationProvider.Models;
@@ -11,8 +13,8 @@ namespace VerificationProvider.Controllers
     {
         private readonly IPasscodeService _passcodeService;
         private readonly HttpClientService _httpClientService;
-        private readonly string _apiKey = "";  // TODO read from config
-        private readonly string _providerName = ""; // TODO read from config
+        private readonly string _apiKey = "4f1692fdbfe042e690e07ba3c3be9cf2";  // TODO read from config
+        private readonly string _providerName = "VerificationProvider-ApiKey"; // TODO read from config
 
         public PasscodeController(IPasscodeService passcodeService, HttpClientService httpClientService)
         {
@@ -32,13 +34,12 @@ namespace VerificationProvider.Controllers
         }
 
         [HttpPost]
-        [ActionName("validate")]
-        public IHttpActionResult ValidatePasscode([FromBody] string passcode, string userId)
+        public IHttpActionResult ValidatePasscode([FromBody] ValidatePasscodeRequest request)
         {
-            if (!_passcodeService.ValidatePasscodeAndUserId(passcode, userId)) return BadRequest();
+            if (!_passcodeService.ValidatePasscodeAndUserId(request.Passcode, request.UserId)) return BadRequest();
 
-            _passcodeService.RemovePasscode(userId);
-            return Ok();
+            _passcodeService.RemovePasscode(request.UserId);
+            return Ok(new {Message = $"Passcode verified. Email is now verified for the user {request.UserId}."});
         }
 
         [HttpPost]
@@ -56,12 +57,11 @@ namespace VerificationProvider.Controllers
             if (tokenProviderResponse == null)
                 return Unauthorized();
 
-            var emailRequest = passcodeRequest.MapToEmailRequest(_passcodeService.GeneratePasscode(passcodeRequest.UserId));
+            var emailRequest = passcodeRequest.MapToEmailRequest(_passcodeService.GeneratePasscode(passcodeRequest.EmailAddress));
 
             var result = await _httpClientService.TryToSendPassCodeToEmail(emailRequest, tokenProviderResponse.Token);
 
             return result ? (IHttpActionResult)Ok() : BadRequest();
         }
-
     }
 }
